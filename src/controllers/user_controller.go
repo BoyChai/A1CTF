@@ -67,14 +67,7 @@ func GetProfile(c *gin.Context) {
 }
 
 func Register(c *gin.Context) {
-	var payload webmodels.RegisterPayload
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"code":    400,
-			"message": i18ntool.Translate(c, &i18n.LocalizeConfig{MessageID: "InvalidRequestPayload"}),
-		})
-		return
-	}
+	payload := *c.MustGet("payload").(*webmodels.RegisterPayload)
 
 	if clientconfig.ClientConfig.CaptchaEnabled {
 		valid := proofofwork.CapInstance.ValidateToken(c.Request.Context(), payload.Captcha)
@@ -133,6 +126,8 @@ func Register(c *gin.Context) {
 	// avoid attack
 	loweredEmail := strings.ToLower(payload.Email)
 
+	clientIP := c.ClientIP()
+
 	newUser := models.User{
 		UserID:        uuid.New().String(),
 		Username:      payload.Username,
@@ -150,6 +145,7 @@ func Register(c *gin.Context) {
 		EmailVerified: false,
 		JWTVersion:    general.RandomString(16),
 		RegisterTime:  time.Now().UTC(),
+		RegisterIP:    &clientIP,
 	}
 
 	if err := dbtool.DB().Create(&newUser).Error; err != nil {
@@ -262,14 +258,7 @@ func GetClientConfig(c *gin.Context) {
 }
 
 func UpdateUserProfile(c *gin.Context) {
-	var payload webmodels.UpdateUserProfilePayload
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"code":    400,
-			"message": i18ntool.Translate(c, &i18n.LocalizeConfig{MessageID: "InvalidRequestPayload"}),
-		})
-		return
-	}
+	payload := *c.MustGet("payload").(*webmodels.UpdateUserProfilePayload)
 
 	user := c.MustGet("user").(models.User)
 
@@ -293,14 +282,7 @@ func UpdateUserProfile(c *gin.Context) {
 }
 
 func UpdateUserEmail(c *gin.Context) {
-	var payload webmodels.UpdateUserEmailPayload
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"code":    400,
-			"message": i18ntool.Translate(c, &i18n.LocalizeConfig{MessageID: "InvalidRequestPayload"}),
-		})
-		return
-	}
+	payload := *c.MustGet("payload").(*webmodels.UpdateUserEmailPayload)
 
 	user := c.MustGet("user").(models.User)
 
@@ -369,14 +351,7 @@ func SendVerifyEmail(c *gin.Context) {
 }
 
 func VerifyEmailCode(c *gin.Context) {
-	var payload webmodels.EmailVerifyPayload
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"code":    400,
-			"message": i18ntool.Translate(c, &i18n.LocalizeConfig{MessageID: "InvalidRequestPayload"}),
-		})
-		return
-	}
+	payload := *c.MustGet("payload").(*webmodels.EmailVerifyPayload)
 
 	claims, err := emailjwt.GetEmailVerificationClaims(payload.Code)
 
@@ -415,14 +390,7 @@ func VerifyEmailCode(c *gin.Context) {
 }
 
 func UserChangePassword(c *gin.Context) {
-	var payload webmodels.ChangePasswordPayload
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"code":    400,
-			"message": i18ntool.Translate(c, &i18n.LocalizeConfig{MessageID: "InvalidRequestPayload"}),
-		})
-		return
-	}
+	payload := *c.MustGet("payload").(*webmodels.ChangePasswordPayload)
 
 	if !general.ValidatePassword(payload.NewPassword) {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -463,14 +431,7 @@ func UserChangePassword(c *gin.Context) {
 }
 
 func UserForgetPassword(c *gin.Context) {
-	var payload webmodels.ForgetPasswordSendMailPayload
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"code":    400,
-			"message": i18ntool.Translate(c, &i18n.LocalizeConfig{MessageID: "InvalidRequestPayload"}),
-		})
-		return
-	}
+	payload := *c.MustGet("payload").(*webmodels.ForgetPasswordSendMailPayload)
 
 	allUsers, err := ristretto_tool.CachedMemberMap()
 
@@ -507,14 +468,7 @@ func UserForgetPassword(c *gin.Context) {
 }
 
 func UserVerifyAndResetPassword(c *gin.Context) {
-	var payload webmodels.ForgetPasswordWithVerifyCodePayload
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"code":    400,
-			"message": i18ntool.Translate(c, &i18n.LocalizeConfig{MessageID: "InvalidRequestPayload"}),
-		})
-		return
-	}
+	payload := *c.MustGet("payload").(*webmodels.ForgetPasswordWithVerifyCodePayload)
 
 	claims, err := emailjwt.GetEmailVerificationClaims(payload.Code)
 
